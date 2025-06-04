@@ -85,4 +85,52 @@ app.post('/api/verify-code', async (req, res) => {
   }
 });
 
+// ✅ /api/register
+app.post('/api/register', async (req, res) => {
+  const { phone, name, email, birth_date, gender, source } = req.body;
+  const cleanPhone = phone.replace(/\D/g, '');
+
+  if (!/^79\d{9}$/.test(cleanPhone) || !name || !email) {
+    return res.status(400).json({ success: false, message: 'Неверные или неполные данные' });
+  }
+
+  try {
+    const response = await axios.post(
+      'https://site-v2.apipb.ru/buyer-register',
+      {
+        phone: cleanPhone,
+        name,
+        email,
+        ...(birth_date && { birth_date }),
+        ...(gender && { gender }),
+        ...(source && { source })
+      },
+      {
+        headers: {
+          Authorization: process.env.PB_TOKEN,
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        }
+      }
+    );
+
+    console.log('Ответ от Premium Bonus:', response.data);
+
+    if (response.data.success === true) {
+      res.json({ success: true });
+    } else {
+      // Специальная обработка повторной регистрации
+      const msg = response.data.message?.toLowerCase() || '';
+      if (msg.includes('пользователь') && msg.includes('существует')) {
+        res.json({ success: false, message: 'Пользователь с таким номером уже существует' });
+      } else {
+        res.status(400).json({ success: false, message: response.data.message || 'Ошибка при регистрации' });
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка buyer-register:', error.response?.data || error.message);
+    res.status(500).json({ success: false, message: 'Ошибка при регистрации. Попробуйте позже.' });
+  }
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
