@@ -140,6 +140,13 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-
+console.log("Данные для регистрации:", {
+  phone: cleanPhone,
+  name,
+  email,
+  ...(birth_date && { birth_date }),
+  ...(gender && { gender }),
+  ...(source && { source })
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
