@@ -97,6 +97,16 @@ app.post('/api/register', async (req, res) => {
   const { phone, name, email, birth_date, gender, source } = req.body;
   const cleanPhone = phone.replace(/\D/g, '');
 
+  // Лог — теперь работает, потому что cleanPhone определён
+  console.log("Данные для регистрации:", {
+    phone: cleanPhone,
+    name,
+    email,
+    ...(birth_date && { birth_date }),
+    ...(gender && { gender }),
+    ...(source && { source })
+  });
+
   if (!/^79\d{9}$/.test(cleanPhone) || !name || !email) {
     return res.status(400).json({ success: false, message: 'Неверные или неполные данные' });
   }
@@ -126,7 +136,6 @@ app.post('/api/register', async (req, res) => {
     if (response.data.success === true) {
       res.json({ success: true });
     } else {
-      // Специальная обработка повторной регистрации
       const msg = response.data.message?.toLowerCase() || '';
       if (msg.includes('пользователь') && msg.includes('существует')) {
         res.json({ success: false, message: 'Пользователь с таким номером уже существует' });
@@ -140,13 +149,5 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-console.log("Данные для регистрации:", {
-  phone: cleanPhone,
-  name,
-  email,
-  ...(birth_date && { birth_date }),
-  ...(gender && { gender }),
-  ...(source && { source })
-});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
