@@ -28,22 +28,26 @@ app.post('/api/send-code', async (req, res) => {
   try {
     const smsRes = await axios.get('https://sms.ru/sms/send', {
       params: {
-        api_id: SMS_API_ID,
+        api_id: process.env.SMS_API_ID,
         to: cleanPhone,
         msg: `Ваш код подтверждения: ${code}`,
         json: 1
       }
     });
 
+    console.log("Ответ SMS.ru:", smsRes.data);
+
     if (smsRes.data.status !== 'OK') {
-      return res.status(500).json({ success: false, message: 'Ошибка SMS' });
+      return res.status(500).json({ success: false, message: 'Ошибка SMS', sms: smsRes.data });
     }
 
     res.json({ success: true });
-  } catch {
+  } catch (error) {
+    console.error("Ошибка при отправке SMS:", error.response?.data || error.message);
     res.status(500).json({ success: false, message: 'Ошибка отправки' });
   }
 });
+
 
 // ✅ /api/verify-code
 app.post('/api/verify-code', async (req, res) => {
