@@ -71,26 +71,27 @@ app.post('/api/verify-code', async (req, res) => {
       { identificator: cleanPhone },
       {
         headers: {
-          'Authorization': PB_TOKEN,
+          Authorization: process.env.PB_TOKEN,
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          Accept: 'application/json'
         }
       }
     );
 
     const isRegistered = pbRes.data?.is_registered === true;
 
-    res.json({
-  success: true,
-  registered: isRegistered,
-  redirect: isRegistered
-    ? '/lk'
-    : 'https://project13547195.tilda.ws/page70247263.html'
-});
-  } catch {
-    res.status(500).json({ success: false, message: 'Ошибка Premium Bonus API' });
+    return res.json({
+      success: true,
+      registered: isRegistered,
+      redirect: isRegistered ? '/lk' : '/register'
+    });
+
+  } catch (err) {
+    console.error("Ошибка buyer-info:", err.response?.data || err.message);
+    return res.status(500).json({ success: false, message: 'Ошибка Premium Bonus API' });
   }
 });
+
 
 // ✅ /api/register
 app.post('/api/register', async (req, res) => {
