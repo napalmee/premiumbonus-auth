@@ -98,11 +98,12 @@ app.post('/api/register', async (req, res) => {
   const { phone, name, email, birth_date, gender, source, phone_checked } = req.body;
   const cleanPhone = phone.replace(/\D/g, '');
 
-  if (!/^79\d{9}$/.test(cleanPhone) || !name || !email || phone_checked !== true) {
+  // Email не обязателен, но phone, name и подтверждение — да
+  if (!/^79\d{9}$/.test(cleanPhone) || !name || phone_checked !== true) {
     return res.status(400).json({ success: false, message: 'Неверные или неполные данные' });
   }
 
-  // Проверка: уже зарегистрирован?
+  // Проверка: уже зарегистрирован по телефону
   try {
     const check = await axios.post(
       'https://site-v2.apipb.ru/buyer-info',
@@ -117,26 +118,28 @@ app.post('/api/register', async (req, res) => {
     );
 
     if (check.data?.is_registered === true) {
-      return res.json({ success: false, message: 'Пользователь с таким номером уже существует' });
+      return res.json({ success: false, message: 'Такой пользователь уже существует' });
     }
   } catch (err) {
     console.error('Ошибка buyer-info:', err.response?.data || err.message);
     return res.status(500).json({ success: false, message: 'Ошибка проверки номера' });
   }
 
-  // Регистрация
+  // Попытка регистрации
   try {
+    const payload = {
+      phone: cleanPhone,
+      name,
+      phone_checked: true,
+      ...(email && { email }),
+      ...(birth_date && { birth_date }),
+      ...(gender && { gender }),
+      ...(source && { source })
+    };
+
     const response = await axios.post(
       'https://site-v2.apipb.ru/buyer-register',
-      {
-        phone: cleanPhone,
-        name,
-        email,
-        phone_checked: true, // ← вот здесь!
-        ...(birth_date && { birth_date }),
-        ...(gender && { gender }),
-        ...(source && { source })
-      },
+      payload,
       {
         headers: {
           Authorization: process.env.PB_TOKEN,
@@ -146,20 +149,22 @@ app.post('/api/register', async (req, res) => {
       }
     );
 
-    console.log('Ответ от Premium Bonus:', response.data);
-
     if (response.data.success === true) {
       return res.json({ success: true });
     }
 
+    // Обработка дубликатов
     const msg = (
       response.data.message ||
       response.data.error_description ||
       ''
     ).toLowerCase();
 
-    if (msg.includes('email') && msg.includes('зарегистрирован')) {
-      return res.json({ success: false, message: 'Email уже используется другим пользователем' });
+    if (
+      msg.includes('пользователь') && msg.includes('существует') ||
+      msg.includes('email') && msg.includes('зарегистрирован')
+    ) {
+      return res.json({ success: false, message: 'Такой пользователь уже существует' });
     }
 
     return res.status(400).json({
@@ -172,6 +177,7 @@ app.post('/api/register', async (req, res) => {
     return res.status(500).json({ success: false, message: 'Ошибка при регистрации. Попробуйте позже.' });
   }
 });
+
 
 
 
