@@ -141,7 +141,7 @@ app.post('/api/register', async (req, res) => {
 });
 
 app.get('/api/pb-test', async (req, res) => {
-  const testPhone = '79167280855'; // ← замени на нужный номер
+  const testPhone = '9001234567'; // ← замени на нужный номер
 
   try {
     const response = await axios.post(
