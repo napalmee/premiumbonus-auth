@@ -94,23 +94,36 @@ app.post('/api/verify-code', async (req, res) => {
 
 // ✅ /api/register
 app.post('/api/register', async (req, res) => {
-  const { phone, name, email, birth_date, gender, source } = req.body;
+  const { phone, name, email, birth_date, gender, source, phone_checked } = req.body;
   const cleanPhone = phone.replace(/\D/g, '');
 
-  if (!/^79\d{9}$/.test(cleanPhone) || !name || !email) {
+  if (!/^79\d{9}$/.test(cleanPhone) || !name || !email || phone_checked !== true) {
     return res.status(400).json({ success: false, message: 'Неверные или неполные данные' });
   }
 
-  // 👉 Лог входящих данных
-  console.log("Данные для регистрации:", {
-    phone: cleanPhone,
-    name,
-    email,
-    ...(birth_date && { birth_date }),
-    ...(gender && { gender }),
-    ...(source && { source })
-  });
+  // Проверка: уже зарегистрирован?
+  try {
+    const check = await axios.post(
+      'https://site-v2.apipb.ru/buyer-info',
+      { identificator: cleanPhone },
+      {
+        headers: {
+          Authorization: process.env.PB_TOKEN,
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        }
+      }
+    );
 
+    if (check.data?.is_registered === true) {
+      return res.json({ success: false, message: 'Пользователь с таким номером уже существует' });
+    }
+  } catch (err) {
+    console.error('Ошибка buyer-info:', err.response?.data || err.message);
+    return res.status(500).json({ success: false, message: 'Ошибка проверки номера' });
+  }
+
+  // Регистрация
   try {
     const response = await axios.post(
       'https://site-v2.apipb.ru/buyer-register',
@@ -118,6 +131,7 @@ app.post('/api/register', async (req, res) => {
         phone: cleanPhone,
         name,
         email,
+        phone_checked: true, // ← вот здесь!
         ...(birth_date && { birth_date }),
         ...(gender && { gender }),
         ...(source && { source })
@@ -137,7 +151,6 @@ app.post('/api/register', async (req, res) => {
       return res.json({ success: true });
     }
 
-    // Обработка типичных ошибок
     const msg = (
       response.data.message ||
       response.data.error_description ||
@@ -148,14 +161,9 @@ app.post('/api/register', async (req, res) => {
       return res.json({ success: false, message: 'Email уже используется другим пользователем' });
     }
 
-    if (msg.includes('пользователь') && msg.includes('существует')) {
-      return res.json({ success: false, message: 'Пользователь с таким номером уже существует' });
-    }
-
-    // Любая другая ошибка
     return res.status(400).json({
       success: false,
-      message: response.data.message || response.data.error_description || 'Ошибка при регистрации'
+      message: response.data.message || 'Ошибка при регистрации'
     });
 
   } catch (error) {
@@ -163,6 +171,7 @@ app.post('/api/register', async (req, res) => {
     return res.status(500).json({ success: false, message: 'Ошибка при регистрации. Попробуйте позже.' });
   }
 });
+
 
 
 
