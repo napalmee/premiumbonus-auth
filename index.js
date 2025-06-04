@@ -140,28 +140,6 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-app.get('/api/pb-test', async (req, res) => {
-  const testPhone = '9001234567'; // ← замени на нужный номер
-
-  try {
-    const response = await axios.post(
-      'https://site-v2.apipb.ru/buyer-info',
-      { identificator: testPhone },
-      {
-        headers: {
-          Authorization: process.env.PB_TOKEN,
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        }
-      }
-    );
-
-    res.json({ success: true, data: response.data });
-  } catch (error) {
-    console.error('Ошибка PB_TOKEN:', error.response?.data || error.message);
-    res.status(500).json({ success: false, message: 'Ошибка проверки токена' });
-  }
-});
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
