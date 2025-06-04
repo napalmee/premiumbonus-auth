@@ -76,10 +76,12 @@ app.post('/api/verify-code', async (req, res) => {
     const isRegistered = pbRes.data?.is_registered === true;
 
     res.json({
-      success: true,
-      registered: isRegistered,
-      redirect: isRegistered ? '/lk' : '/register'
-    });
+  success: true,
+  registered: isRegistered,
+  redirect: isRegistered
+    ? '/lk'
+    : 'https://project13547195.tilda.ws/page70247263.html'
+});
   } catch {
     res.status(500).json({ success: false, message: 'Ошибка Premium Bonus API' });
   }
