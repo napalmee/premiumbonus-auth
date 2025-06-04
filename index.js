@@ -97,7 +97,11 @@ app.post('/api/register', async (req, res) => {
   const { phone, name, email, birth_date, gender, source } = req.body;
   const cleanPhone = phone.replace(/\D/g, '');
 
-  // Лог — теперь работает, потому что cleanPhone определён
+  if (!/^79\d{9}$/.test(cleanPhone) || !name || !email) {
+    return res.status(400).json({ success: false, message: 'Неверные или неполные данные' });
+  }
+
+  // 👉 Лог входящих данных
   console.log("Данные для регистрации:", {
     phone: cleanPhone,
     name,
@@ -106,10 +110,6 @@ app.post('/api/register', async (req, res) => {
     ...(gender && { gender }),
     ...(source && { source })
   });
-
-  if (!/^79\d{9}$/.test(cleanPhone) || !name || !email) {
-    return res.status(400).json({ success: false, message: 'Неверные или неполные данные' });
-  }
 
   try {
     const response = await axios.post(
@@ -134,20 +134,36 @@ app.post('/api/register', async (req, res) => {
     console.log('Ответ от Premium Bonus:', response.data);
 
     if (response.data.success === true) {
-      res.json({ success: true });
-    } else {
-      const msg = response.data.message?.toLowerCase() || '';
-      if (msg.includes('пользователь') && msg.includes('существует')) {
-        res.json({ success: false, message: 'Пользователь с таким номером уже существует' });
-      } else {
-        res.status(400).json({ success: false, message: response.data.message || 'Ошибка при регистрации' });
-      }
+      return res.json({ success: true });
     }
+
+    // Обработка типичных ошибок
+    const msg = (
+      response.data.message ||
+      response.data.error_description ||
+      ''
+    ).toLowerCase();
+
+    if (msg.includes('email') && msg.includes('зарегистрирован')) {
+      return res.json({ success: false, message: 'Email уже используется другим пользователем' });
+    }
+
+    if (msg.includes('пользователь') && msg.includes('существует')) {
+      return res.json({ success: false, message: 'Пользователь с таким номером уже существует' });
+    }
+
+    // Любая другая ошибка
+    return res.status(400).json({
+      success: false,
+      message: response.data.message || response.data.error_description || 'Ошибка при регистрации'
+    });
+
   } catch (error) {
     console.error('Ошибка buyer-register:', error.response?.data || error.message);
-    res.status(500).json({ success: false, message: 'Ошибка при регистрации. Попробуйте позже.' });
+    return res.status(500).json({ success: false, message: 'Ошибка при регистрации. Попробуйте позже.' });
   }
 });
+
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
