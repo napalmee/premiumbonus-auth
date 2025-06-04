@@ -10,9 +10,8 @@ app.use(express.json());
 
 const codes = new Map();
 
-// 🔐 ЗАМЕНИ ЭТИ ЗНАЧЕНИЯ НА СВОИ
-const SMS_API_ID = 'ВСТАВЬ_СЮДА_СВОЙ_sms.ru_API_КЛЮЧ';
-const PB_TOKEN = 'test:459a9e9d73d0ccca376df9b07f230d17';
+const SMS_API_ID = process.env.SMS_API_ID;
+const PB_TOKEN = '';
 
 // 📤 /api/send-code
 app.post('/api/send-code', async (req, res) => {
