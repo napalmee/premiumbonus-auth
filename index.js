@@ -208,6 +208,49 @@ app.post('/api/user', async (req, res) => {
 });
 
 
+app.post('/api/update-user', async (req, res) => {
+  const { phone, name, email, birth_date, gender } = req.body;
+  const cleanPhone = phone?.replace(/\D/g, '');
+
+  if (!/^79\d{9}$/.test(cleanPhone) || !name) {
+    return res.status(400).json({ success: false, message: 'Некорректные данные' });
+  }
+
+  try {
+    const payload = {
+      phone: cleanPhone,
+      name,
+      ...(email && { email }),
+      ...(birth_date && { birth_date }),
+      ...(gender && { gender })
+    };
+
+    const response = await axios.post(
+      'https://site-v2.apipb.ru/buyer-update',
+      payload,
+      {
+        headers: {
+          Authorization: process.env.PB_TOKEN,
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        }
+      }
+    );
+
+    if (response.data?.success === true) {
+      return res.json({ success: true });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: response.data?.message || 'Ошибка при обновлении'
+    });
+
+  } catch (err) {
+    console.error('Ошибка buyer-update:', err.response?.data || err.message);
+    return res.status(500).json({ success: false, message: 'Ошибка при обновлении данных' });
+  }
+});
 
 
 
