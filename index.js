@@ -207,39 +207,6 @@ app.post('/api/user', async (req, res) => {
   }
 });
 
-// /api/generate-code
-app.post('/api/generate-code', async (req, res) => {
-  const { phone } = req.body;
-  const cleanPhone = phone?.replace(/\D/g, '');
-
-  if (!/^79\d{9}$/.test(cleanPhone)) {
-    return res.status(400).json({ success: false, message: 'Неверный номер' });
-  }
-
-  try {
-    const response = await axios.post(
-      'https://site-v2.apipb.ru/generate-code',
-      { phone: cleanPhone },
-      {
-        headers: {
-          Authorization: process.env.PB_TOKEN,
-          'Content-Type': 'application/json',
-          Accept: 'application/json'
-        }
-      }
-    );
-
-    const qrUrl = response.data?.qr_code_url;
-    if (qrUrl) {
-      return res.json({ success: true, qr_url: qrUrl });
-    }
-
-    return res.status(400).json({ success: false, message: 'QR-код не получен' });
-  } catch (err) {
-    console.error('Ошибка generate-code:', err.response?.data || err.message);
-    return res.status(500).json({ success: false, message: 'Ошибка генерации QR-кода' });
-  }
-});
 
 
 
