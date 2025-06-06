@@ -1,14 +1,19 @@
 {
-  "name": "premiumbonus-backend",
+  "name": "premium-bonus-login",
   "version": "1.0.0",
-  "type": "module",
-  "main": "index.js",
+  "description": "Вход в личный кабинет по SMS-коду с Premium Bonus",
+  "main": "server.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   },
+  "author": "Scotty",
+  "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.0",
+    "axios": "^1.7.2",
+    "body-parser": "^1.20.2",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "jsonwebtoken": "^9.0.2"
   }
 }
